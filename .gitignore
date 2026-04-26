@@ -1,0 +1,28 @@
+# Root .gitignore for OSSC Project
+
+# IntelliJ related
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code related
+.vscode/
+
+# Flutter/Dart related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+**/.flutter-plugins-dependencies
+**/.last_build_id
+
+# OS related
+.DS_Store
+Thumbs.db
+
+# Mobile App specific (already handled by its own .gitignore but good to have here)
+smoker_mobile_app/build/
+smoker_mobile_app/.dart_tool/
+smoker_mobile_app/.flutter-plugins-dependencies

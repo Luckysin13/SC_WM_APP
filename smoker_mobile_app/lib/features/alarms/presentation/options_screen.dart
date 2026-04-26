@@ -1,0 +1,443 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers.dart';
+import '../../../core/networking/device_session_manager.dart';
+import '../../../shared/widgets/connection_banner.dart';
+import '../../../shared/widgets/smoker_card.dart';
+import '../../../app/theme/colors.dart';
+
+class OptionsScreen extends ConsumerStatefulWidget {
+  const OptionsScreen({super.key});
+
+  @override
+  ConsumerState<OptionsScreen> createState() => _OptionsScreenState();
+}
+
+class _OptionsScreenState extends ConsumerState<OptionsScreen> {
+  final _meatController = TextEditingController();
+  final _warmController = TextEditingController();
+
+  final _meatFocus = FocusNode();
+  final _warmFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(deviceSessionManagerProvider).changeView('options');
+    });
+  }
+
+  @override
+  void dispose() {
+    _meatController.dispose();
+    _warmController.dispose();
+    _meatFocus.dispose();
+    _warmFocus.dispose();
+    super.dispose();
+  }
+
+  void _sendDoneAlarmToggle(bool value) {
+    ref.read(deviceSessionManagerProvider).sendCommand('DoneAlarm$value');
+  }
+
+  void _sendKeepWarmToggle(bool value) {
+    ref.read(deviceSessionManagerProvider).sendCommand('KeepWarm$value');
+  }
+
+  void _sendMeatSetpoint(String val) {
+    final parsed = int.tryParse(val);
+    if (parsed != null && parsed >= 160 && parsed <= 225) {
+      ref.read(deviceSessionManagerProvider).sendCommand('8b$parsed');
+    }
+    FocusScope.of(context).unfocus();
+  }
+
+  void _sendWarmSetpoint(String val, int currentMeatSetpoint) {
+    final parsed = int.tryParse(val);
+    if (parsed != null) {
+      if (parsed >= currentMeatSetpoint) {
+        _sendKeepWarmToggle(false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Keep Warm disabled: temperature must be lower than meat target.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      } else if (parsed >= 159 && parsed <= 450) {
+        ref.read(deviceSessionManagerProvider).sendCommand('9b$parsed');
+      }
+    }
+    FocusScope.of(context).unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final liveState = ref.watch(deviceStateProvider);
+    final connectionState = ref.watch(connectionStatusProvider);
+    final isConnected = connectionState == ConnectionStatus.connected;
+
+    if (!_meatFocus.hasFocus &&
+        _meatController.text != liveState.meatDoneSetpoint.toString()) {
+      _meatController.text = liveState.meatDoneSetpoint.toString();
+    }
+    if (!_warmFocus.hasFocus &&
+        _warmController.text != liveState.keepWarmSetpoint.toString()) {
+      _warmController.text = liveState.keepWarmSetpoint.toString();
+    }
+
+    final meatDirty =
+        _meatController.text != liveState.meatDoneSetpoint.toString();
+    final warmDirty =
+        _warmController.text != liveState.keepWarmSetpoint.toString();
+
+    final shortestSide = MediaQuery.of(context).size.shortestSide;
+    final orientation = MediaQuery.of(context).orientation;
+    final isLandscape = orientation == Orientation.landscape;
+    final isTablet = shortestSide >= 600;
+
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              floating: true,
+              snap: true,
+              toolbarHeight: isLandscape && !isTablet ? 40 : 56,
+              centerTitle: false,
+              title: Row(
+                children: [
+                  const Icon(
+                    Icons.tune,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'OPTIONS',
+                          style: TextStyle(
+                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Alarms and keep warm settings'.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                              color: SmokerColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(1),
+                child: Container(
+                  height: 1,
+                  decoration: const BoxDecoration(
+                    gradient: SmokerColors.primaryGradient,
+                  ),
+                ),
+              ),
+            ),
+          ];
+        },
+        body: Column(
+          children: [
+            if (!isConnected) const ConnectionBanner(),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  _buildPremiumAlarmCard(
+                    title: 'MEAT DONE',
+                    subtitle:
+                        'Automatically disable the fan when the meat reaches target.',
+                    icon: Icons.restaurant,
+                    isEnabled: liveState.doneAlarmEnabled,
+                    isOnline: isConnected,
+                    onToggle: (v) {
+                      if (!v && liveState.keepWarmEnabled) {
+                        _sendKeepWarmToggle(false);
+                      }
+                      _sendDoneAlarmToggle(v);
+                    },
+                    expandedContent: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildPremiumInput(
+                          controller: _meatController,
+                          focusNode: _meatFocus,
+                          label: 'Meat Target Temp (°F)',
+                          helper: 'Range: 160–225 °F',
+                          isEnabled: isConnected,
+                          isDirty: meatDirty,
+                          validator: (v) {
+                            final p = int.tryParse(v ?? '');
+                            if (p == null || p < 160 || p > 225) {
+                              return '160-225 only';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildSaveButton(
+                          onPressed: isConnected
+                              ? () => _sendMeatSetpoint(_meatController.text)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildPremiumAlarmCard(
+                    title: 'KEEP WARM',
+                    subtitle:
+                        'Lowers pit temp to holding level after meat is done.',
+                    icon: Icons.fireplace,
+                    isEnabled: liveState.keepWarmEnabled,
+                    isOnline: isConnected,
+                    onToggle: (v) {
+                      if (v && !liveState.doneAlarmEnabled) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Enable Meat Done Alert first.'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
+                      _sendKeepWarmToggle(v);
+                    },
+                    expandedContent: Column(
+                      children: [
+                        const SizedBox(height: 16),
+                        _buildPremiumInput(
+                          controller: _warmController,
+                          focusNode: _warmFocus,
+                          label: 'Keep Warm Pit Temp (°F)',
+                          helper: 'Must be lower than Meat Done target',
+                          isEnabled: isConnected,
+                          isDirty: warmDirty,
+                          validator: (v) {
+                            final p = int.tryParse(v ?? '');
+                            if (p == null || p < 159 || p > 450) {
+                              return '159-450 only';
+                            }
+                            if (p >= liveState.meatDoneSetpoint) {
+                              return 'Must be less than Meat Done target';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        _buildSaveButton(
+                          onPressed: isConnected
+                              ? () => _sendWarmSetpoint(
+                                  _warmController.text,
+                                  liveState.meatDoneSetpoint,
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumAlarmCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool isEnabled,
+    required bool isOnline,
+    required ValueChanged<bool> onToggle,
+    required Widget expandedContent,
+  }) {
+    return SmokerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isEnabled
+                      ? Colors.tealAccent.withValues(alpha: 0.1)
+                      : Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: isEnabled ? Colors.tealAccent : Colors.white38,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: SmokerColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: isEnabled,
+                onChanged: isOnline ? onToggle : null,
+                activeTrackColor: SmokerColors.accentBlue.withValues(
+                  alpha: 0.5,
+                ),
+                activeThumbColor: SmokerColors.accentBlue,
+              ),
+            ],
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: isEnabled ? expandedContent : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumInput({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String label,
+    required String helper,
+    required bool isEnabled,
+    bool isDirty = false,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      onChanged: (_) => setState(() {}),
+      keyboardType: TextInputType.number,
+      enabled: isEnabled,
+      style: const TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+          fontSize: 14,
+          fontWeight: isDirty ? FontWeight.bold : FontWeight.normal,
+        ),
+        helperText: helper,
+        helperStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.03),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            width: isDirty ? 2 : 1,
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            width: isDirty ? 2 : 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: isDirty ? SmokerColors.accentOrange : SmokerColors.accentBlue,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+      ),
+      validator: validator,
+    );
+  }
+
+  Widget _buildSaveButton({VoidCallback? onPressed}) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: onPressed != null ? SmokerColors.accentBlue : Colors.white10,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: onPressed != null
+            ? [
+                const BoxShadow(
+                  color: Colors.black38,
+                  offset: Offset(0, 4),
+                  blurRadius: 0,
+                ),
+              ]
+            : null,
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Text(
+          'SAVE SETTINGS',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+    );
+  }
+}
