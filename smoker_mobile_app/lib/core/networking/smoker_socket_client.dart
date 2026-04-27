@@ -7,15 +7,12 @@ class SmokerSocketClient {
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
 
-  final void Function(Map<String, dynamic> json) onLiveStateReceived;
-  final void Function(Map<String, dynamic> json) onHistoryPayloadReceived;
-  final void Function(Map<String, dynamic> json) onOtaPayloadReceived;
+  final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+
   final void Function() onDisconnected;
 
   SmokerSocketClient({
-    required this.onLiveStateReceived,
-    required this.onHistoryPayloadReceived,
-    required this.onOtaPayloadReceived,
     required this.onDisconnected,
   });
 
@@ -59,24 +56,7 @@ class SmokerSocketClient {
     try {
       final json = jsonDecode(message);
       if (json is Map<String, dynamic>) {
-        final type = json['type'] as String?;
-        // History packets
-        if (type == 'history_point' ||
-            type == 'history_meta' ||
-            type == 'history_chunk' ||
-            type == 'seed_history_ack') {
-          onHistoryPayloadReceived(json);
-          // Dedicated OTA info packet
-        } else if (type == 'ota_info') {
-          onOtaPayloadReceived(json);
-        } else {
-          // Regular live-state update — may also contain OTA fields
-          onLiveStateReceived(json);
-          if (json.containsKey('otaStatus') ||
-              json.containsKey('otaProgress')) {
-            onOtaPayloadReceived(json);
-          }
-        }
+        _messageController.add(json);
       }
     } catch (_) {
       // Ignored

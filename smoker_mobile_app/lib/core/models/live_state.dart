@@ -86,18 +86,22 @@ class LiveState {
     );
   }
 
-  // Parses incoming partial JSON and merges with current state
   LiveState copyWithJson(Map<String, dynamic> json) {
+    final parsedFanSpeed = json['boxFan']?.toString() ?? json['boxValue3']?.toString() ?? fanSpeedPercent;
+    final inferredFanDisabled = parsedFanSpeed.contains('Disabled') || parsedFanSpeed.contains('Meat Done');
+
     return LiveState(
       meatTemp: json['boxMeat']?.toString() ?? json['boxValue0']?.toString() ?? meatTemp,
       pitTemp: json['boxPit']?.toString() ?? json['boxValue1']?.toString() ?? pitTemp,
       pitSetpoint: _parseInt(json['boxValue2'], pitSetpoint),
-      fanSpeedPercent: json['boxFan']?.toString() ?? json['boxValue3']?.toString() ?? fanSpeedPercent,
+      fanSpeedPercent: parsedFanSpeed,
       keepWarmEnabled: _parseBool(json['boxValue4'], keepWarmEnabled),
       doneAlarmEnabled: _parseBool(json['boxValue6'], doneAlarmEnabled),
       meatDoneSetpoint: _parseInt(json['boxValue8'], meatDoneSetpoint),
       keepWarmSetpoint: _parseInt(json['boxValue9'], keepWarmSetpoint),
-      meatDoneFanDisabled: _parseBool(json['meatDoneFanDisabled'], meatDoneFanDisabled),
+      meatDoneFanDisabled: json.containsKey('meatDoneFanDisabled') 
+          ? _parseBool(json['meatDoneFanDisabled'], false) 
+          : inferredFanDisabled,
       pitOffset: _parseInt(json['pitOffset'], pitOffset),
       meatOffset: _parseInt(json['meatOffset'], meatOffset),
       kp: _parseDouble(json['kp'], kp),

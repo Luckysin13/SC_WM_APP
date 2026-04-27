@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/temp_card.dart';
 import '../../../shared/widgets/setpoint_editor.dart';
@@ -192,7 +192,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         onAck: () {
                           ref
                               .read(deviceSessionManagerProvider)
-                              .sendCommand('FanAck');
+                              .sendCommand('AckMeatDoneFanDisable');
                         },
                         labelStyle: labelStyle,
                       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 
 class ConnectionBanner extends ConsumerWidget {
   const ConnectionBanner({super.key});
@@ -10,7 +10,7 @@ class ConnectionBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        connectivityState.value?.isEmpty ?? true ||
+        (connectivityState.value?.isEmpty ?? true) ||
         connectivityState.value!.contains(ConnectivityResult.none);
 
     return Container(

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../domain/discovery_service.dart';
 import '../../../core/models/device_identity.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
 
@@ -54,7 +54,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
     final discoveryState = ref.watch(discoveryProvider);
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        connectivityState.value?.isEmpty ?? true ||
+        (connectivityState.value?.isEmpty ?? true) ||
         connectivityState.value!.contains(ConnectivityResult.none);
 
     final shortestSide = MediaQuery.of(context).size.shortestSide;

@@ -9,6 +9,9 @@ import 'smoker_api_client.dart';
 import '../models/transport_profile.dart';
 import '../models/live_state.dart';
 import '../models/device_identity.dart';
+import '../constants/network_constants.dart';
+import '../constants/device_commands.dart';
+import '../logging/app_logger.dart';
 
 enum ConnectionStatus { disconnected, connecting, connected, reconnecting }
 
@@ -29,8 +32,6 @@ class DeviceSessionManager {
   bool _isIntentionalDisconnect = false;
 
   final void Function(LiveState) onLiveStateUpdated;
-  final void Function(Map<String, dynamic>) onHistoryPayloadReceived;
-  final void Function(Map<String, dynamic>) onOtaPayloadReceived;
   final void Function(ConnectionStatus) onStatusChanged;
   final Future<List<ConnectivityResult>> Function() checkConnectivity;
   
@@ -39,34 +40,44 @@ class DeviceSessionManager {
   final bool enableMockMode;
   Timer? _mockTimer;
 
+  final _messageController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
+
   DeviceSessionManager({
     required Dio dio,
     required this.onLiveStateUpdated,
-    required this.onHistoryPayloadReceived,
-    required this.onOtaPayloadReceived,
     required this.onStatusChanged,
     required this.checkConnectivity,
     this.enableMockMode = false,
   })  : _resolver = TransportResolver(dio),
         _apiClient = SmokerApiClient(dio) {
     _socketClient = SmokerSocketClient(
-      onLiveStateReceived: _handleLiveState,
-      onHistoryPayloadReceived: onHistoryPayloadReceived,
-      onOtaPayloadReceived: _handleOtaPayload,
       onDisconnected: _handleDisconnect,
     );
+    _socketClient.messageStream.listen(_handleMessage);
   }
 
-  void _handleOtaPayload(Map<String, dynamic> json) {
-    onOtaPayloadReceived(json);
+  void _handleMessage(Map<String, dynamic> json) {
+    _messageController.add(json);
 
-    // If we get a success status, the device is about to reboot.
-    // Transition to reboot mode automatically.
-    final status = json['otaStatus']?.toString().toLowerCase();
-    if (status == 'success') {
-      enterOtaRebootMode();
+    final type = json['type'] as String?;
+    if (type == 'ota_info' || json.containsKey('otaStatus') || json.containsKey('otaProgress')) {
+      final status = json['otaStatus']?.toString().toLowerCase();
+      if (status == 'success') {
+        enterOtaRebootMode();
+      }
+    }
+
+    if (type != 'history_point' &&
+        type != 'history_meta' &&
+        type != 'history_chunk' &&
+        type != 'seed_history_ack' &&
+        type != 'ota_info') {
+      _handleLiveState(json);
     }
   }
+
+
 
   ConnectionStatus get status => _status;
   LiveState get latestState => _latestState;
@@ -95,9 +106,9 @@ class DeviceSessionManager {
         await _socketClient.connect(_currentTransport!.wsBaseUrl, _currentView);
         // Only send getValues if we're still connected after the view swap
         if (_status == ConnectionStatus.connected) {
-          _socketClient.sendCommand('getValues');
+          _socketClient.sendCommand(DeviceCommands.getValues);
           if (view == 'history') {
-            _socketClient.sendCommand('getHistory');
+            _socketClient.sendCommand(DeviceCommands.getHistory);
           }
         }
       } catch (_) {
@@ -109,26 +120,28 @@ class DeviceSessionManager {
   Future<void> _attemptConnection() async {
     if (_currentDevice == null) return;
     
-    print('Attempting connection to ${_currentDevice?.host}...');
+    AppLogger.info('Attempting connection to ${_currentDevice?.host}...');
     _updateStatus(ConnectionStatus.connecting);
 
     if (enableMockMode) {
       _updateStatus(ConnectionStatus.connected);
       _mockTimer?.cancel();
       _mockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        _handleLiveState({
+        final mockJson = {
           'boxValue0': (180 + (timer.tick % 20)).toString(),
           'boxValue1': (230 + (timer.tick % 5)).toString(),
           'connected': true,
-        });
+        };
+        _messageController.add(mockJson);
+        _handleLiveState(mockJson);
       });
       return;
     }
 
     final connectivity = await checkConnectivity();
-    print('Current connectivity: $connectivity');
+    AppLogger.debug('Current connectivity: $connectivity');
     if (connectivity.contains(ConnectivityResult.none)) {
-      print('Connectivity reported as none, skipping connection attempt.');
+      AppLogger.warning('Connectivity reported as none, skipping connection attempt.');
       _scheduleReconnect();
       return;
     }
@@ -141,13 +154,13 @@ class DeviceSessionManager {
       _failedAttempts = 0;
       
       // Request full state once the socket handshake is confirmed ready
-      _socketClient.sendCommand('getValues');
+      _socketClient.sendCommand(DeviceCommands.getValues);
       if (_currentView == 'history') {
-        _socketClient.sendCommand('getHistory');
+        _socketClient.sendCommand(DeviceCommands.getHistory);
       }
       
-    } catch (e) {
-      print('Connection attempt failed: $e');
+    } catch (e, st) {
+      AppLogger.error('Connection attempt failed', e, st);
       _currentTransport = null; // Invalidate cached transport
       _scheduleReconnect();
     }
@@ -165,8 +178,8 @@ class DeviceSessionManager {
     _watchdogTimer?.cancel();
     _socketClient.disconnect();
 
-    // Wait 20 s before first reconnect attempt — device needs time to flash and boot
-    _reconnectTimer = Timer(const Duration(seconds: 20), () {
+    // Wait before first reconnect attempt — device needs time to flash and boot
+    _reconnectTimer = Timer(NetworkConstants.otaRebootDelay, () {
       _failedAttempts = 0;
       if (!_isIntentionalDisconnect) _attemptConnection();
     });
@@ -186,9 +199,9 @@ class DeviceSessionManager {
 
   void _startPingTimer() {
     _pingTimer?.cancel();
-    _pingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    _pingTimer = Timer.periodic(NetworkConstants.pingInterval, (timer) {
       if (_status == ConnectionStatus.connected) {
-        sendCommand('getValues');
+        sendCommand(DeviceCommands.getValues);
       } else {
         timer.cancel();
       }
@@ -198,7 +211,7 @@ class DeviceSessionManager {
   void _resetWatchdog() {
     _watchdogTimer?.cancel();
     if (_status == ConnectionStatus.connected) {
-      _watchdogTimer = Timer(const Duration(seconds: 10), () {
+      _watchdogTimer = Timer(NetworkConstants.watchdogTimeout, () {
         if (!_isIntentionalDisconnect) {
           _handleDisconnect();
         }
@@ -219,7 +232,7 @@ class DeviceSessionManager {
     _watchdogTimer?.cancel();
 
     _failedAttempts++;
-    final seconds = min(pow(2, _failedAttempts - 1).toInt(), 4);
+    final seconds = min(pow(2, _failedAttempts - 1).toInt(), NetworkConstants.maxReconnectBackoffSeconds);
     
     _reconnectTimer = Timer(Duration(seconds: seconds), () {
       if (!_isIntentionalDisconnect) {
@@ -229,11 +242,11 @@ class DeviceSessionManager {
   }
 
   void setSetpointCommand(int setpoint) {
-      sendCommand('2b$setpoint');
+      sendCommand(DeviceCommands.setSetpoint(setpoint));
   }
 
   void toggleFanMode(bool auto) {
-      sendCommand(auto ? 'FanMode:auto' : 'FanMode:off');
+      sendCommand(auto ? DeviceCommands.fanModeAuto : DeviceCommands.fanModeOff);
   }
 
   void sendCommand(String command) {

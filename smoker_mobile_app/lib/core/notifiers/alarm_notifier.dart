@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/live_state.dart';
-import '../providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../shared/services/notification_service.dart';
 
 class AlarmNotifier extends StateNotifier<void> {

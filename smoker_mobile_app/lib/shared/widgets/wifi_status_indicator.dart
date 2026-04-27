@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../core/networking/device_session_manager.dart';
 
 class WifiStatusIndicator extends ConsumerWidget {

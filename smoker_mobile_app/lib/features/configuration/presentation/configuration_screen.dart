@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../../core/models/live_state.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/connection_banner.dart';
@@ -502,6 +502,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                   isEnabled: isConnected,
                   isSigned: true,
                   isDirty: meatDirty,
+                  onSubmitted: isConnected ? (_) => _sendCalibration() : null,
                 ),
               ),
               const SizedBox(width: 12),
@@ -513,6 +514,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                   isEnabled: isConnected,
                   isSigned: true,
                   isDirty: pitDirty,
+                  onSubmitted: isConnected ? (_) => _sendCalibration() : null,
                 ),
               ),
             ],
@@ -549,6 +551,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                   isEnabled: isConnected,
                   isDecimal: true,
                   isDirty: kpDirty,
+                  onSubmitted: isConnected ? (_) => _sendPID() : null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -560,6 +563,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                   isEnabled: isConnected,
                   isDecimal: true,
                   isDirty: kiDirty,
+                  onSubmitted: isConnected ? (_) => _sendPID() : null,
                 ),
               ),
               const SizedBox(width: 8),
@@ -571,6 +575,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                   isEnabled: isConnected,
                   isDecimal: true,
                   isDirty: kdDirty,
+                  onSubmitted: isConnected ? (_) => _sendPID() : null,
                 ),
               ),
             ],
@@ -794,11 +799,18 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     bool isSigned = false,
     bool isDecimal = false,
     bool isDirty = false,
+    ValueChanged<String>? onSubmitted,
   }) {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
       onChanged: (_) => setState(() {}),
+      onFieldSubmitted: onSubmitted,
+      onTap: () {
+        controller.clear();
+        setState(() {});
+      },
+      textInputAction: TextInputAction.done,
       keyboardType: TextInputType.numberWithOptions(
         signed: isSigned,
         decimal: isDecimal,

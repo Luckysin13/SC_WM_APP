@@ -2,7 +2,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
+import 'package:ossc/features/wifi_setup/data/wifi_scan_provider.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../app/theme/colors.dart';
@@ -43,7 +44,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
   Future<void> _scanNetworks() async {
     final connectivityState = ref.read(connectivityProvider);
     final isWifiOff =
-        connectivityState.value?.isEmpty ?? true ||
+        (connectivityState.value?.isEmpty ?? true) ||
         connectivityState.value!.contains(ConnectivityResult.none);
 
     if (isWifiOff) {
@@ -186,7 +187,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        connectivityState.value?.isEmpty ?? true ||
+        (connectivityState.value?.isEmpty ?? true) ||
         connectivityState.value!.contains(ConnectivityResult.none);
 
     final liveState = ref.watch(deviceStateProvider);
@@ -395,7 +396,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                 _buildScanningState()
               else ...[
                 if (scanState.networks.isEmpty)
-                  _buildManualSsidInput(manualSsidDirty: manualSsidDirty)
+                  _buildManualSsidInput(isWifiOff: isWifiOff, manualSsidDirty: manualSsidDirty)
                 else
                   _buildNetworkSelector(context, scanState.networks, ssidDirty: ssidDirty),
                 const SizedBox(height: 20),
@@ -407,6 +408,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   obscure: _obscurePassword,
                   isPassword: true,
                   isDirty: passDirty,
+                  onSubmitted: isWifiOff ? null : (_) => _submit(false),
                 ),
               ],
             ],
@@ -448,7 +450,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     );
   }
 
-  Widget _buildManualSsidInput({required bool manualSsidDirty}) {
+  Widget _buildManualSsidInput({required bool isWifiOff, required bool manualSsidDirty}) {
     final isApMode = ref.watch(deviceStateProvider).isApMode;
 
     return Column(
@@ -488,6 +490,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
           hint: 'Enter SSID manually',
           icon: Icons.wifi_find_rounded,
           isDirty: manualSsidDirty,
+          onSubmitted: isWifiOff ? null : (_) => _submit(false),
         ),
       ],
     );
@@ -704,6 +707,13 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
           controller: _manualSsidController,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) {
+            setState(() {
+              _ssidController.text = _manualSsidController.text.trim();
+            });
+            Navigator.pop(c);
+          },
           decoration: InputDecoration(
             hintText: 'Enter Network Name',
             hintStyle: const TextStyle(color: Colors.white24),
@@ -789,6 +799,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   hint: '192.168.1.100',
                   icon: Icons.adjust_rounded,
                   isDirty: ipDirty,
+                  onSubmitted: isWifiOff ? null : (_) => _submit(false),
                 ),
                 const SizedBox(height: 12),
                 _buildPremiumInput(
@@ -797,6 +808,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   hint: '192.168.1.1',
                   icon: Icons.router_rounded,
                   isDirty: gatewayDirty,
+                  onSubmitted: isWifiOff ? null : (_) => _submit(false),
                 ),
               ],
             ],
@@ -838,10 +850,13 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     bool obscure = false,
     bool isPassword = false,
     bool isDirty = false,
+    ValueChanged<String>? onSubmitted,
   }) {
     return TextFormField(
       controller: controller,
       onChanged: (_) => setState(() {}),
+      onFieldSubmitted: onSubmitted,
+      textInputAction: TextInputAction.done,
       obscureText: obscure,
       style: const TextStyle(
         color: Colors.white,

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ossc/features/history/domain/history_assembler.dart';
-import 'package:ossc/core/models/history_point.dart';
+import 'package:ossc/features/history/domain/history_point.dart';
 
 void main() {
   group('HistoryAssembler', () {

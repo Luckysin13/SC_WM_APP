@@ -1,4 +1,4 @@
-import '../../../core/models/history_point.dart';
+import 'package:ossc/features/history/domain/history_point.dart';
 
 class HistoryAssembler {
   int? _currentTransferId;

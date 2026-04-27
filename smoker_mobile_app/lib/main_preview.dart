@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'app/router.dart';
 import 'app/theme/app_theme.dart';
-import 'core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import 'core/networking/device_session_manager.dart';
 
 void main() async {
@@ -24,12 +24,6 @@ void main() async {
             checkConnectivity: () async => [ConnectivityResult.wifi],
             onLiveStateUpdated: (state) {
               ref.read(deviceStateProvider.notifier).state = state;
-            },
-            onHistoryPayloadReceived: (payload) {
-              ref.read(historyProvider.notifier).handlePayload(payload);
-            },
-            onOtaPayloadReceived: (payload) {
-              ref.read(otaProvider.notifier).update((state) => state.copyWithJson(payload));
             },
             onStatusChanged: (status) {
               ref.read(connectionStatusProvider.notifier).state = status;

@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../constants/network_constants.dart';
+
 class SmokerApiClient {
   final Dio _dio;
 
@@ -13,8 +15,8 @@ class SmokerApiClient {
       final response = await _dio.get(
         '$baseUrl/api/networks',
         options: Options(
-          sendTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 20), // scan takes ~4-8s on device
+          sendTimeout: NetworkConstants.apiConnectTimeout,
+          receiveTimeout: NetworkConstants.wifiScanReceiveTimeout, // scan takes ~4-8s on device
         ),
       );
 
@@ -43,8 +45,8 @@ class SmokerApiClient {
         data: formData,
         options: Options(
           contentType: Headers.formUrlEncodedContentType,
-          sendTimeout: const Duration(seconds: 5),
-          receiveTimeout: const Duration(seconds: 5),
+          sendTimeout: NetworkConstants.apiConnectTimeout,
+          receiveTimeout: NetworkConstants.apiReceiveTimeout,
         ),
       );
       return response.statusCode == 200 || response.statusCode == 204;

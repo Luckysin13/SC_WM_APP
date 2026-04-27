@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
+import 'package:ossc/core/providers/core_providers.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../core/services/background_service.dart';
+
+final stayAwakeProvider = StateProvider<bool>((ref) => false);
 
 class OptionsScreen extends ConsumerStatefulWidget {
   const OptionsScreen({super.key});
@@ -23,8 +27,20 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(deviceSessionManagerProvider).changeView('options');
+      final isRunning = await BackgroundMonitor.isRunning();
+      ref.read(stayAwakeProvider.notifier).state = isRunning;
+
+      // Listen for background service status updates
+      FlutterBackgroundService().on('status').listen((event) {
+        if (mounted) {
+          final isRunning = event?['running'] ?? false;
+          if (ref.read(stayAwakeProvider) != isRunning) {
+             ref.read(stayAwakeProvider.notifier).state = isRunning;
+          }
+        }
+      });
     });
   }
 
@@ -196,12 +212,59 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             }
                             return null;
                           },
+                          onSubmitted: isConnected ? (v) => _sendMeatSetpoint(v) : null,
                         ),
                         const SizedBox(height: 16),
                         _buildSaveButton(
                           onPressed: isConnected
                               ? () => _sendMeatSetpoint(_meatController.text)
                               : null,
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white10),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.vibration, color: SmokerColors.accentBlue, size: 20),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'Background Alarm (Stay Awake)',
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                  ),
+                                  Switch(
+                                    value: ref.watch(stayAwakeProvider),
+                                    onChanged: (val) async {
+                                      ref.read(stayAwakeProvider.notifier).state = val;
+                                      if (val) {
+                                        final session = ref.read(deviceSessionManagerProvider);
+                                        if (session.transport != null) {
+                                          await BackgroundMonitor.start(session.transport!.wsBaseUrl);
+                                        }
+                                      } else {
+                                        await BackgroundMonitor.stop();
+                                      }
+                                    },
+                                    activeThumbColor: SmokerColors.accentBlue,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Note: Meat Done notifications will NOT be active when the app is minimized unless this Stay Awake function is enabled.',
+                                style: TextStyle(color: Colors.white60, fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -246,6 +309,7 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             }
                             return null;
                           },
+                          onSubmitted: isConnected ? (v) => _sendWarmSetpoint(v, liveState.meatDoneSetpoint) : null,
                         ),
                         const SizedBox(height: 16),
                         _buildSaveButton(
@@ -350,11 +414,18 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
     required bool isEnabled,
     bool isDirty = false,
     String? Function(String?)? validator,
+    ValueChanged<String>? onSubmitted,
   }) {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
       onChanged: (_) => setState(() {}),
+      onFieldSubmitted: onSubmitted,
+      onTap: () {
+        controller.clear();
+        setState(() {});
+      },
+      textInputAction: TextInputAction.done,
       keyboardType: TextInputType.number,
       enabled: isEnabled,
       style: const TextStyle(

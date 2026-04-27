@@ -48,6 +48,14 @@ class _SetpointEditorState extends State<SetpointEditor> {
   }
 
   void _submit() {
+    if (_controller.text.trim().isEmpty) {
+      setState(() {
+        _errorText = null;
+        _isEditing = false;
+      });
+      return;
+    }
+
     final val = int.tryParse(_controller.text);
     if (val == null || val < 145 || val > 450) {
       setState(() {
@@ -93,7 +101,7 @@ class _SetpointEditorState extends State<SetpointEditor> {
                       setState(() {
                         _isEditing = true;
                         _errorText = null;
-                        _controller.text = widget.currentSetpoint.toString();
+                        _controller.text = '';
                       });
                     }
                   : null,
@@ -138,6 +146,7 @@ class _SetpointEditorState extends State<SetpointEditor> {
                       width: 120,
                       child: TextField(
                         controller: _controller,
+                        textInputAction: TextInputAction.done,
                         keyboardType: const TextInputType.numberWithOptions(),
                         autofocus: true,
                         textAlign: TextAlign.center,

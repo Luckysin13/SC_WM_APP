@@ -1,6 +1,11 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
 
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // No-op: stop monitoring is handled natively via StopServiceReceiver
+}
+
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -36,8 +41,9 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (details) {
-        // Handle notification tap
+        // Handle notification tap — nothing needed for now
       },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
     if (Platform.isAndroid) {
@@ -47,15 +53,26 @@ class NotificationService {
       await androidPlugin?.requestNotificationsPermission();
       
       // Create a high-priority channel for alarms
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'meat_alarm_channel',
-        'Meat Alarms',
+      const AndroidNotificationChannel alarmChannel = AndroidNotificationChannel(
+        'ossc_alarms',
+        'Alarms',
         description: 'Notifications for when your meat is done.',
         importance: Importance.max,
         playSound: true,
         enableVibration: true,
       );
-      await androidPlugin?.createNotificationChannel(channel);
+      await androidPlugin?.createNotificationChannel(alarmChannel);
+
+      // Create a low-priority silent channel for the persistent background service
+      const AndroidNotificationChannel bgChannel = AndroidNotificationChannel(
+        'ossc_bg',
+        'Background Service',
+        description: 'Persistent notification for background monitoring.',
+        importance: Importance.low,
+        playSound: false,
+        enableVibration: false,
+      );
+      await androidPlugin?.createNotificationChannel(bgChannel);
     }
 
     _isInitialized = true;

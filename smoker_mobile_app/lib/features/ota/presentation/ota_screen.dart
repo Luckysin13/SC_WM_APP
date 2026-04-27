@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/providers.dart';
+import 'package:ossc/core/providers/core_providers.dart';
+import 'package:ossc/features/ota/data/ota_provider.dart';
 import '../../../core/networking/device_session_manager.dart';
-import '../../../core/models/ota_state.dart';
+import 'package:ossc/features/ota/domain/ota_state.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
