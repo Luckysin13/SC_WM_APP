@@ -31,9 +31,10 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final isApMode = ref.read(deviceStateProvider).isApMode;
       final scanState = ref.read(wifiScanProvider);
-      // Scan on first load if we don't have results yet
-      if (scanState.networks.isEmpty) {
+      // Scan on first load if we don't have results yet and we are in AP mode
+      if (scanState.networks.isEmpty && isApMode) {
         _scanNetworks();
       }
     });
@@ -42,7 +43,8 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
   Future<void> _scanNetworks() async {
     final connectivityState = ref.read(connectivityProvider);
     final isWifiOff =
-        !(connectivityState.value?.contains(ConnectivityResult.wifi) ?? false);
+        connectivityState.value?.isEmpty ?? true ||
+        connectivityState.value!.contains(ConnectivityResult.none);
 
     if (isWifiOff) {
       ref.read(wifiScanProvider.notifier).setNetworks([]);
@@ -184,7 +186,8 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        !(connectivityState.value?.contains(ConnectivityResult.wifi) ?? false);
+        connectivityState.value?.isEmpty ?? true ||
+        connectivityState.value!.contains(ConnectivityResult.none);
 
     final liveState = ref.watch(deviceStateProvider);
     final ssidDirty = _ssidController.text != liveState.ssid;
@@ -357,6 +360,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
   Widget _buildNetworkCard(bool isWifiOff, {required bool ssidDirty, required bool manualSsidDirty, required bool passDirty}) {
     final scanState = ref.watch(wifiScanProvider);
+    final isApMode = ref.watch(deviceStateProvider).isApMode;
 
     return Opacity(
       opacity: isWifiOff ? 0.5 : 1.0,
@@ -374,7 +378,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                     'SELECT NETWORK',
                     SmokerColors.accentBlue,
                   ),
-                  if (!scanState.isLoading)
+                  if (!scanState.isLoading && isApMode)
                     IconButton(
                       onPressed: _scanNetworks,
                       icon: const Icon(

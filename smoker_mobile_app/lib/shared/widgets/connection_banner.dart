@@ -10,7 +10,8 @@ class ConnectionBanner extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        !(connectivityState.value?.contains(ConnectivityResult.wifi) ?? false);
+        connectivityState.value?.isEmpty ?? true ||
+        connectivityState.value!.contains(ConnectivityResult.none);
 
     return Container(
       width: double.infinity,
@@ -39,7 +40,7 @@ class ConnectionBanner extends ConsumerWidget {
             ),
           const SizedBox(width: 12),
           Text(
-            isWifiOff ? 'WiFi is disabled' : 'Reconnecting to device...',
+            isWifiOff ? 'No network connection' : 'Reconnecting to device...',
             style: const TextStyle(
               color: Color(0xFFF87171),
               fontWeight: FontWeight.w600,

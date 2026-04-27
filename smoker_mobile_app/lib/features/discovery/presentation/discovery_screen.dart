@@ -54,7 +54,8 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
     final discoveryState = ref.watch(discoveryProvider);
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
-        !(connectivityState.value?.contains(ConnectivityResult.wifi) ?? false);
+        connectivityState.value?.isEmpty ?? true ||
+        connectivityState.value!.contains(ConnectivityResult.none);
 
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     final isLandscape =
@@ -150,7 +151,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
                         Icon(Icons.wifi_off, color: Colors.white, size: 20),
                         SizedBox(width: 12),
                         Text(
-                          'TURN ON WIFI',
+                          'CHECK CONNECTION',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -208,7 +209,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
               ),
               const SizedBox(height: 24),
               const Text(
-                'WIFI IS DISABLED',
+                'NO NETWORK CONNECTION',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -220,7 +221,7 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
-                  'Please enable WiFi in your device settings\nto scan for smoker controllers.',
+                  'Please ensure your device is connected to a network\nto scan for smoker controllers.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: SmokerColors.textSecondary, fontSize: 14),
                 ),

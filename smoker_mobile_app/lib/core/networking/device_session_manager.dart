@@ -109,6 +109,7 @@ class DeviceSessionManager {
   Future<void> _attemptConnection() async {
     if (_currentDevice == null) return;
     
+    print('Attempting connection to ${_currentDevice?.host}...');
     _updateStatus(ConnectionStatus.connecting);
 
     if (enableMockMode) {
@@ -125,7 +126,9 @@ class DeviceSessionManager {
     }
 
     final connectivity = await checkConnectivity();
-    if (!connectivity.contains(ConnectivityResult.wifi)) {
+    print('Current connectivity: $connectivity');
+    if (connectivity.contains(ConnectivityResult.none)) {
+      print('Connectivity reported as none, skipping connection attempt.');
       _scheduleReconnect();
       return;
     }
@@ -144,6 +147,7 @@ class DeviceSessionManager {
       }
       
     } catch (e) {
+      print('Connection attempt failed: $e');
       _currentTransport = null; // Invalidate cached transport
       _scheduleReconnect();
     }
