@@ -37,47 +37,23 @@ class FanCard extends StatelessWidget {
     return SmokerCard(
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'FAN SPEED'.toUpperCase(),
-                    style: effectiveLabelStyle,
-                  ),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IgnorePointer(
+                  ignoring: true,
+                  child: Opacity(opacity: 0, child: _buildToggle()),
                 ),
-              ),
-              const SizedBox(width: 8),
-              // Manual/Auto Toggle
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: SmokerColors.borderColor),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _ToggleButton(
-                      label: 'AUTO',
-                      isSelected: isAuto,
-                      onPressed: enabled ? () => onToggleMode(true) : null,
-                      selectedColor: SmokerColors.accentBlue,
-                    ),
-                    _ToggleButton(
-                      label: 'OFF',
-                      isSelected: !isAuto,
-                      onPressed: enabled ? () => onToggleMode(false) : null,
-                      selectedColor: SmokerColors.accentBlue,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Text('FAN SPEED'.toUpperCase(), style: effectiveLabelStyle),
+                const SizedBox(width: 16),
+                _buildToggle(),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           if (fanDisabledACK)
             Column(
               children: [
@@ -103,6 +79,8 @@ class FanCard extends StatelessWidget {
                   ),
                   child: const Text('ACKNOWLEDGE'),
                 ),
+                const SizedBox(height: 16),
+                _buildToggle(),
               ],
             )
           else
@@ -136,6 +114,32 @@ class FanCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildToggle() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: SmokerColors.borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ToggleButton(
+            label: 'AUTO',
+            isSelected: isAuto,
+            onPressed: enabled ? () => onToggleMode(true) : null,
+            selectedColor: SmokerColors.accentBlue,
+          ),
+          _ToggleButton(
+            label: 'OFF',
+            isSelected: !isAuto,
+            onPressed: enabled ? () => onToggleMode(false) : null,
+            selectedColor: SmokerColors.accentBlue,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ToggleButton extends StatelessWidget {
@@ -156,7 +160,7 @@ class _ToggleButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? selectedColor : Colors.transparent,
           borderRadius: BorderRadius.circular(7),

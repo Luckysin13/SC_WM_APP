@@ -8,6 +8,7 @@ import 'package:ossc/features/ota/domain/ota_state.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../core/utils/ui_utils.dart';
 
 class OtaScreen extends ConsumerStatefulWidget {
   const OtaScreen({super.key});
@@ -183,6 +184,8 @@ class _OtaScreenState extends ConsumerState<OtaScreen> {
       _rebootTimedOut = false;
     }
 
+    final config = ResponsiveToolbarConfig.of(context);
+
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -190,15 +193,47 @@ class _OtaScreenState extends ConsumerState<OtaScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
-              title: const Text(
-                'FIRMWARE UPDATE',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: Colors.white,
-                ),
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.system_update,
+                    color: Colors.white,
+                    size: config.mainIconSize,
+                  ),
+                  SizedBox(width: config.spacing),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'OTA UPDATE',
+                          style: TextStyle(
+                            fontSize: config.titleFontSize,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Over-the-air firmware management'.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: config.subtitleFontSize,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                              color: SmokerColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(1),

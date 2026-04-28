@@ -8,6 +8,7 @@ import '../../../shared/widgets/smoker_card.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../app/theme/colors.dart';
 import '../../../core/networking/device_session_manager.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../../../shared/widgets/wifi_status_indicator.dart';
 
 class WifiSetupScreen extends ConsumerStatefulWidget {
@@ -180,11 +181,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape;
-    final isTablet = shortestSide >= 600;
-
+    final config = ResponsiveToolbarConfig.of(context);
     final connectivityState = ref.watch(connectivityProvider);
     final isWifiOff =
         (connectivityState.value?.isEmpty ?? true) ||
@@ -194,7 +191,8 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     final ssidDirty = _ssidController.text != liveState.ssid;
     final manualSsidDirty = _manualSsidController.text.isNotEmpty;
     final passDirty = _passController.text.isNotEmpty;
-    final ipDirty = _ipController.text.isNotEmpty && _ipController.text != liveState.ip;
+    final ipDirty =
+        _ipController.text.isNotEmpty && _ipController.text != liveState.ip;
     final gatewayDirty = _gatewayController.text.isNotEmpty;
 
     return Scaffold(
@@ -204,21 +202,21 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
-              toolbarHeight: isLandscape && !isTablet ? 40 : 56,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
               title: Row(
                 children: [
-                  const Icon(Icons.wifi, color: Colors.white, size: 32),
-                  const SizedBox(width: 12),
+                  Icon(Icons.wifi, color: Colors.white, size: config.mainIconSize),
+                  SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'WIFI',
+                          'WI-FI SETUP',
                           style: TextStyle(
-                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontSize: config.titleFontSize,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             color: Colors.white,
@@ -230,7 +228,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                           child: Text(
                             'Network and connectivity settings'.toUpperCase(),
                             style: TextStyle(
-                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                               color: SmokerColors.textSecondary,
@@ -289,9 +287,18 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   : ListView(
                       padding: const EdgeInsets.all(16.0),
                       children: [
-                        _buildNetworkCard(isWifiOff, ssidDirty: ssidDirty, manualSsidDirty: manualSsidDirty, passDirty: passDirty),
+                        _buildNetworkCard(
+                          isWifiOff,
+                          ssidDirty: ssidDirty,
+                          manualSsidDirty: manualSsidDirty,
+                          passDirty: passDirty,
+                        ),
                         const SizedBox(height: 16),
-                        _buildIpModeCard(isWifiOff, ipDirty: ipDirty, gatewayDirty: gatewayDirty),
+                        _buildIpModeCard(
+                          isWifiOff,
+                          ipDirty: ipDirty,
+                          gatewayDirty: gatewayDirty,
+                        ),
                         const SizedBox(height: 32),
                         _buildSaveButton(
                           label: 'SAVE & APPLY SETTINGS',
@@ -359,7 +366,12 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     );
   }
 
-  Widget _buildNetworkCard(bool isWifiOff, {required bool ssidDirty, required bool manualSsidDirty, required bool passDirty}) {
+  Widget _buildNetworkCard(
+    bool isWifiOff, {
+    required bool ssidDirty,
+    required bool manualSsidDirty,
+    required bool passDirty,
+  }) {
     final scanState = ref.watch(wifiScanProvider);
     final isApMode = ref.watch(deviceStateProvider).isApMode;
 
@@ -377,7 +389,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   _buildSectionHeader(
                     Icons.wifi,
                     'SELECT NETWORK',
-                    SmokerColors.accentBlue,
+                    Colors.tealAccent,
                   ),
                   if (!scanState.isLoading && isApMode)
                     IconButton(
@@ -396,9 +408,16 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                 _buildScanningState()
               else ...[
                 if (scanState.networks.isEmpty)
-                  _buildManualSsidInput(isWifiOff: isWifiOff, manualSsidDirty: manualSsidDirty)
+                  _buildManualSsidInput(
+                    isWifiOff: isWifiOff,
+                    manualSsidDirty: manualSsidDirty,
+                  )
                 else
-                  _buildNetworkSelector(context, scanState.networks, ssidDirty: ssidDirty),
+                  _buildNetworkSelector(
+                    context,
+                    scanState.networks,
+                    ssidDirty: ssidDirty,
+                  ),
                 const SizedBox(height: 20),
                 _buildPremiumInput(
                   controller: _passController,
@@ -450,7 +469,10 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     );
   }
 
-  Widget _buildManualSsidInput({required bool isWifiOff, required bool manualSsidDirty}) {
+  Widget _buildManualSsidInput({
+    required bool isWifiOff,
+    required bool manualSsidDirty,
+  }) {
     final isApMode = ref.watch(deviceStateProvider).isApMode;
 
     return Column(
@@ -498,9 +520,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
   Widget _buildNetworkSelector(
     BuildContext context,
-    List<Map<String, dynamic>> networks,
-    {required bool ssidDirty}
-  ) {
+    List<Map<String, dynamic>> networks, {
+    required bool ssidDirty,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -513,7 +535,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
               color: Colors.white.withValues(alpha: 0.03),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: ssidDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+                color: ssidDirty
+                    ? SmokerColors.accentOrange
+                    : Colors.white.withValues(alpha: 0.1),
                 width: ssidDirty ? 2 : 1,
               ),
             ),
@@ -521,7 +545,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
               children: [
                 Icon(
                   Icons.wifi_lock_rounded,
-                  color: ssidDirty ? SmokerColors.accentOrange : SmokerColors.accentBlue,
+                  color: ssidDirty
+                      ? SmokerColors.accentOrange
+                      : SmokerColors.accentBlue,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -532,7 +558,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                       Text(
                         'SELECT A NETWORK',
                         style: TextStyle(
-                          color: ssidDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+                          color: ssidDirty
+                              ? SmokerColors.accentOrange
+                              : SmokerColors.textSecondary,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -545,7 +573,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                         style: TextStyle(
                           color: _ssidController.text.isEmpty
                               ? Colors.white24
-                              : (ssidDirty ? SmokerColors.accentOrange : Colors.white),
+                              : (ssidDirty
+                                    ? SmokerColors.accentOrange
+                                    : Colors.white),
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -555,7 +585,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                 ),
                 Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: ssidDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+                  color: ssidDirty
+                      ? SmokerColors.accentOrange
+                      : SmokerColors.textSecondary,
                 ),
               ],
             ),
@@ -632,7 +664,8 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
 
                     final n = networks[i];
                     final ssid = n['ssid']?.toString() ?? '';
-                    final rssi = int.tryParse(n['rssi']?.toString() ?? '0') ?? 0;
+                    final rssi =
+                        int.tryParse(n['rssi']?.toString() ?? '0') ?? 0;
                     final secure = n['secure'] == true;
 
                     return ListTile(
@@ -718,7 +751,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
             hintText: 'Enter Network Name',
             hintStyle: const TextStyle(color: Colors.white24),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: SmokerColors.accentBlue),
@@ -753,7 +788,11 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     );
   }
 
-  Widget _buildIpModeCard(bool isWifiOff, {required bool ipDirty, required bool gatewayDirty}) {
+  Widget _buildIpModeCard(
+    bool isWifiOff, {
+    required bool ipDirty,
+    required bool gatewayDirty,
+  }) {
     return Opacity(
       opacity: isWifiOff ? 0.5 : 1.0,
       child: AbsorbPointer(
@@ -866,7 +905,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+          color: isDirty
+              ? SmokerColors.accentOrange
+              : SmokerColors.textSecondary,
           fontSize: 14,
           fontWeight: isDirty ? FontWeight.bold : FontWeight.normal,
         ),
@@ -874,7 +915,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.05)),
         prefixIcon: Icon(
           icon,
-          color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary.withValues(alpha: 0.5),
+          color: isDirty
+              ? SmokerColors.accentOrange
+              : SmokerColors.textSecondary.withValues(alpha: 0.5),
           size: 18,
         ),
         suffixIcon: isPassword
@@ -883,7 +926,9 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                   _obscurePassword
                       ? Icons.visibility_off_rounded
                       : Icons.visibility_rounded,
-                  color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary.withValues(alpha: 0.5),
+                  color: isDirty
+                      ? SmokerColors.accentOrange
+                      : SmokerColors.textSecondary.withValues(alpha: 0.5),
                   size: 18,
                 ),
                 onPressed: () =>
@@ -895,21 +940,27 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : SmokerColors.accentBlue,
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : SmokerColors.accentBlue,
             width: 2,
           ),
         ),

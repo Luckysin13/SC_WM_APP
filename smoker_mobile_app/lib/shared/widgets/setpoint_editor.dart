@@ -102,6 +102,7 @@ class _SetpointEditorState extends State<SetpointEditor> {
                         _isEditing = true;
                         _errorText = null;
                         _controller.text = '';
+                        _errorText = null;
                       });
                     }
                   : null,
@@ -169,24 +170,21 @@ class _SetpointEditorState extends State<SetpointEditor> {
                         ),
                         maxLength: 3,
                         onSubmitted: (_) => _submit(),
+                        onTapOutside: (event) {
+                          FocusScope.of(context).unfocus();
+                          setState(() {
+                            _isEditing = false;
+                            _errorText = null;
+                          });
+                        },
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () => setState(() => _isEditing = false),
-                      child: const Text('CANCEL'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text('SET'),
-                    ),
-                  ],
+                ElevatedButton(
+                  onPressed: _submit,
+                  child: const Text('SET'),
                 ),
               ],
             ),

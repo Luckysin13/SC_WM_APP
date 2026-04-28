@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:ossc/core/providers/core_providers.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/temp_card.dart';
@@ -33,8 +34,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final isConnected = connectionState == ConnectionStatus.connected;
 
     final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape;
     final isTablet = shortestSide >= 600;
 
     final screenWidth = MediaQuery.of(context).size.width;
@@ -65,6 +64,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       fontWeight: FontWeight.w800,
     );
 
+    final config = ResponsiveToolbarConfig.of(context);
+
     return Scaffold(
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
@@ -72,15 +73,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
-              toolbarHeight: isLandscape && !isTablet ? 60 : 70,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
               title: Row(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.asset('assets/icon/icon.png', height: 38),
+                    child: Image.asset('assets/icon/icon.png', height: config.mainIconSize),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +90,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Text(
                           'O.S.S.C',
                           style: TextStyle(
-                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontSize: config.titleFontSize,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             color: Colors.white,
@@ -101,7 +102,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           child: Text(
                             'Open Source Smoker Controller'.toUpperCase(),
                             style: TextStyle(
-                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                               color: SmokerColors.textSecondary,

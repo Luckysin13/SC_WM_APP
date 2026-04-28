@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
+import '../../../core/utils/ui_utils.dart';
 import 'package:ossc/core/providers/core_providers.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/connection_banner.dart';
@@ -27,6 +28,12 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
   @override
   void initState() {
     super.initState();
+    _meatFocus.addListener(() {
+      if (!_meatFocus.hasFocus && mounted) setState(() {});
+    });
+    _warmFocus.addListener(() {
+      if (!_warmFocus.hasFocus && mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(deviceSessionManagerProvider).changeView('options');
       final isRunning = await BackgroundMonitor.isRunning();
@@ -109,10 +116,7 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
     final warmDirty =
         _warmController.text != liveState.keepWarmSetpoint.toString();
 
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape;
-    final isTablet = shortestSide >= 600;
+    final config = ResponsiveToolbarConfig.of(context);
 
     return Scaffold(
       body: NestedScrollView(
@@ -121,16 +125,16 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
-              toolbarHeight: isLandscape && !isTablet ? 40 : 56,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
               title: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.tune,
                     color: Colors.white,
-                    size: 32,
+                    size: config.mainIconSize,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +143,7 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                         Text(
                           'OPTIONS',
                           style: TextStyle(
-                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontSize: config.titleFontSize,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             color: Colors.white,
@@ -151,7 +155,7 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                           child: Text(
                             'Alarms and keep warm settings'.toUpperCase(),
                             style: TextStyle(
-                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                               color: SmokerColors.textSecondary,
@@ -215,12 +219,6 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                           onSubmitted: isConnected ? (v) => _sendMeatSetpoint(v) : null,
                         ),
                         const SizedBox(height: 16),
-                        _buildSaveButton(
-                          onPressed: isConnected
-                              ? () => _sendMeatSetpoint(_meatController.text)
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -233,12 +231,17 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.vibration, color: SmokerColors.accentBlue, size: 20),
-                                  const SizedBox(width: 8),
+                                  Icon(Icons.vibration, color: SmokerColors.accentBlue, size: 24),
+                                  const SizedBox(width: 16),
                                   const Expanded(
                                     child: Text(
-                                      'Background Alarm (Stay Awake)',
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                                      'BACKGROUND ALARM (STAY AWAKE)',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 1.1,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                   Switch(
@@ -265,6 +268,12 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                               ),
                             ],
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildSaveButton(
+                          onPressed: isConnected
+                              ? () => _sendMeatSetpoint(_meatController.text)
+                              : null,
                         ),
                       ],
                     ),

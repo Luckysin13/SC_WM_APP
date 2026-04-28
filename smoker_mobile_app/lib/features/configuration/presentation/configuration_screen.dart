@@ -7,6 +7,7 @@ import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../../../shared/widgets/version_display.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
@@ -49,6 +50,21 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
   @override
   void initState() {
     super.initState();
+    _pitFocus.addListener(() {
+      if (!_pitFocus.hasFocus && mounted) setState(() {});
+    });
+    _meatFocus.addListener(() {
+      if (!_meatFocus.hasFocus && mounted) setState(() {});
+    });
+    _kpFocus.addListener(() {
+      if (!_kpFocus.hasFocus && mounted) setState(() {});
+    });
+    _kiFocus.addListener(() {
+      if (!_kiFocus.hasFocus && mounted) setState(() {});
+    });
+    _kdFocus.addListener(() {
+      if (!_kdFocus.hasFocus && mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(deviceSessionManagerProvider).changeView('configuration');
     });
@@ -200,10 +216,7 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
         (_timezones.where((t) => t.$2 == liveState.timezone).firstOrNull?.$1 ??
             liveState.timezone);
 
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape;
-    final isTablet = shortestSide >= 600;
+    final config = ResponsiveToolbarConfig.of(context);
 
     return Scaffold(
       body: NestedScrollView(
@@ -212,25 +225,25 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
             SliverAppBar(
               floating: true,
               snap: true,
-              toolbarHeight: isLandscape && !isTablet ? 40 : 56,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
               title: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.settings,
                     color: Colors.white,
-                    size: 32,
+                    size: config.mainIconSize,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'CONFIG',
+                          'CONFIGURATION',
                           style: TextStyle(
-                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontSize: config.titleFontSize,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             color: Colors.white,
@@ -240,9 +253,9 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Calibration and PID tuning'.toUpperCase(),
+                            'Calibrate probes and tune controllers'.toUpperCase(),
                             style: TextStyle(
-                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                               color: SmokerColors.textSecondary,

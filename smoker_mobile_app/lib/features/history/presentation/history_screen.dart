@@ -9,6 +9,7 @@ import 'package:ossc/features/history/domain/history_point.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../core/utils/ui_utils.dart';
 import '../../../core/models/live_state.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -82,11 +83,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ref.watch(connectionStatusProvider) == ConnectionStatus.connected;
     final liveState = ref.watch(deviceStateProvider);
 
-    final orientation = MediaQuery.of(context).orientation;
-    final isLandscape = orientation == Orientation.landscape;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final config = ResponsiveToolbarConfig.of(context);
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     final isTablet = shortestSide >= 600;
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: NestedScrollView(
@@ -96,16 +97,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               floating: true,
               snap: true,
               pinned: false,
-              toolbarHeight: isLandscape && !isTablet ? 40 : 56,
+              toolbarHeight: config.toolbarHeight,
               centerTitle: false,
               title: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.show_chart,
                     color: Colors.white,
-                    size: 32,
+                    size: config.mainIconSize,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +115,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         Text(
                           'HISTORY',
                           style: TextStyle(
-                            fontSize: isLandscape && !isTablet ? 20 : 26,
+                            fontSize: config.titleFontSize,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
                             color: Colors.white,
@@ -126,7 +127,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           child: Text(
                             'Session data and temperature charts'.toUpperCase(),
                             style: TextStyle(
-                              fontSize: isLandscape && !isTablet ? 7 : 9,
+                              fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.0,
                               color: SmokerColors.textSecondary,
