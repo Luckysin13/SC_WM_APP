@@ -6,14 +6,18 @@ class TempCard extends StatelessWidget {
   final String title;
   final String tempDisplay;
   final bool isDone;
+  final bool showAlarmBell;
   final TextStyle? labelStyle;
+  final double? valueFontSize;
 
   const TempCard({
     super.key,
     required this.title,
     required this.tempDisplay,
     this.isDone = false,
+    this.showAlarmBell = false,
     this.labelStyle,
+    this.valueFontSize,
   });
 
   @override
@@ -35,7 +39,9 @@ class TempCard extends StatelessWidget {
     return Semantics(
       label: isDone
           ? '$title is done at $tempDisplay degrees Fahrenheit'
-          : '$title is $tempDisplay degrees Fahrenheit',
+          : (showAlarmBell
+              ? '$title alarm active, current temp $tempDisplay degrees Fahrenheit'
+              : '$title is $tempDisplay degrees Fahrenheit'),
       child: ExcludeSemantics(
         child: SmokerCard(
           child: Column(
@@ -45,13 +51,21 @@ class TempCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    if (showAlarmBell && !isDone) ...[
+                      Icon(
+                        Icons.notifications_active_rounded,
+                        color: SmokerColors.accentGreen,
+                        size: (effectiveLabelStyle.fontSize ?? 22) * (14 / 22),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
                     Text(title.toUpperCase(), style: effectiveLabelStyle),
                     if (isDone) ...[
                       const SizedBox(width: 8),
-                      const Icon(
+                      Icon(
                         Icons.check_circle,
                         color: SmokerColors.accentGreen,
-                        size: 14,
+                        size: (effectiveLabelStyle.fontSize ?? 22) * (14 / 22),
                       ),
                     ],
                   ],
@@ -62,8 +76,8 @@ class TempCard extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   hasProbe ? '$tempDisplay°F' : '--°F',
-                  style: const TextStyle(
-                    fontSize: 40,
+                  style: TextStyle(
+                    fontSize: valueFontSize ?? 40,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
                   ),

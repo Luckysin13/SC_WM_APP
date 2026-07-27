@@ -10,6 +10,7 @@ class FanCard extends StatelessWidget {
   final ValueChanged<bool> onToggleMode;
   final VoidCallback onAck;
   final TextStyle? labelStyle;
+  final double? valueFontSize;
 
   const FanCard({
     super.key,
@@ -20,6 +21,7 @@ class FanCard extends StatelessWidget {
     required this.onToggleMode,
     required this.onAck,
     this.labelStyle,
+    this.valueFontSize,
   });
 
   @override
@@ -39,24 +41,12 @@ class FanCard extends StatelessWidget {
         children: [
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IgnorePointer(
-                  ignoring: true,
-                  child: Opacity(opacity: 0, child: _buildToggle()),
-                ),
-                const SizedBox(width: 16),
-                Text('FAN SPEED'.toUpperCase(), style: effectiveLabelStyle),
-                const SizedBox(width: 16),
-                _buildToggle(),
-              ],
-            ),
+            child: Text('FAN SPEED'.toUpperCase(), style: effectiveLabelStyle),
           ),
-          const SizedBox(height: 16),
           if (fanDisabledACK)
             Column(
               children: [
+                const SizedBox(height: 12),
                 const Text(
                   'FAN DISABLED',
                   style: TextStyle(
@@ -79,36 +69,41 @@ class FanCard extends StatelessWidget {
                   ),
                   child: const Text('ACKNOWLEDGE'),
                 ),
-                const SizedBox(height: 16),
-                _buildToggle(),
               ],
             )
           else
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    hasValue ? fanPercentDisplay : '--',
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
+            Column(
+              children: [
+                const SizedBox(height: 12),
+                _buildToggle(),
+                const SizedBox(height: 16),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        hasValue ? fanPercentDisplay : '--',
+                        style: TextStyle(
+                          fontSize: valueFontSize ?? 40,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        ' %',
+                        style: TextStyle(
+                          fontSize: (valueFontSize ?? 40) * 0.6,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    ' %',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
         ],
       ),

@@ -7,6 +7,7 @@ import 'package:ossc/features/wifi_setup/data/wifi_scan_provider.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/theme/dimensions.dart';
 import '../../../core/networking/device_session_manager.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../shared/widgets/wifi_status_indicator.dart';
@@ -206,7 +207,11 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
               centerTitle: false,
               title: Row(
                 children: [
-                  Icon(Icons.wifi, color: Colors.white, size: config.mainIconSize),
+                  Icon(
+                    Icons.wifi,
+                    color: Colors.white,
+                    size: config.mainIconSize,
+                  ),
                   SizedBox(width: config.spacing),
                   Expanded(
                     child: Column(
@@ -226,7 +231,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Network and connectivity settings'.toUpperCase(),
+                            'Network Settings'.toUpperCase(),
                             style: TextStyle(
                               fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
@@ -256,12 +261,7 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
         body: Column(
           children: [
             if (ref.watch(connectionStatusProvider) !=
-                    ConnectionStatus.connected ||
-                !(ref
-                        .watch(connectivityProvider)
-                        .value
-                        ?.contains(ConnectivityResult.wifi) ??
-                    false))
+                ConnectionStatus.connected)
               const ConnectionBanner(),
             Expanded(
               child: _isSubmitting
@@ -979,37 +979,44 @@ class _WifiSetupScreenState extends ConsumerState<WifiSetupScreen> {
     Color? textColor,
   }) {
     final effectiveColor = color ?? SmokerColors.accentBlue;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: onPressed != null ? effectiveColor : Colors.white10,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: onPressed != null
-            ? [
-                const BoxShadow(
-                  color: Colors.black38,
-                  offset: Offset(0, 4),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: SmokerDimensions.maxButtonWidth,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: textColor ?? Colors.white,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: onPressed != null ? effectiveColor : Colors.white10,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: onPressed != null
+                ? [
+                    const BoxShadow(
+                      color: Colors.black38,
+                      offset: Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: textColor ?? Colors.white,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
         ),
       ),

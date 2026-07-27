@@ -66,3 +66,46 @@ class ResponsiveToolbarConfig {
     }
   }
 }
+
+class ResponsiveNavConfig {
+  final double navBarHeight;
+  final double navIconSize;
+  final double navLabelFontSize;
+  final double railWidth;
+  final double railIconSize;
+  final double railLabelFontSize;
+
+  const ResponsiveNavConfig({
+    required this.navBarHeight,
+    required this.navIconSize,
+    required this.navLabelFontSize,
+    required this.railWidth,
+    required this.railIconSize,
+    required this.railLabelFontSize,
+  });
+
+  factory ResponsiveNavConfig.of(BuildContext context) {
+    final shortestSide = MediaQuery.of(context).size.shortestSide;
+    final isTablet = shortestSide >= 600;
+
+    if (isTablet) {
+      return const ResponsiveNavConfig(
+        navBarHeight: 110,
+        navIconSize: 32,
+        navLabelFontSize: 16,
+        railWidth: 110,
+        railIconSize: 32,
+        railLabelFontSize: 14,
+      );
+    } else {
+      return const ResponsiveNavConfig(
+        navBarHeight: 80,
+        navIconSize: 24,
+        navLabelFontSize: 12,
+        railWidth: 80,
+        railIconSize: 24,
+        railLabelFontSize: 11,
+      );
+    }
+  }
+}

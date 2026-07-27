@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse notificationResponse) {
@@ -46,7 +47,7 @@ class NotificationService {
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
 
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       final androidPlugin = _notificationsPlugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();

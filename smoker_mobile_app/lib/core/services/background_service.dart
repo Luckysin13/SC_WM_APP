@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -191,7 +192,12 @@ void onStart(ServiceInstance service) async {
 }
 
 class BackgroundMonitor {
+  /// Whether the current platform supports the background service.
+  static bool get _isSupported => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
   static Future<void> initialize() async {
+    if (!_isSupported) return;
+
     final service = FlutterBackgroundService();
 
     final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -246,6 +252,8 @@ class BackgroundMonitor {
   }
 
   static Future<void> start(String wsUrl) async {
+    if (!_isSupported) return;
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('bg_ws_url', wsUrl);
     await prefs.setBool('bg_monitoring_active', true);
@@ -255,6 +263,8 @@ class BackgroundMonitor {
   }
 
   static Future<void> stop() async {
+    if (!_isSupported) return;
+
     final service = FlutterBackgroundService();
     service.invoke("stopService");
 
@@ -263,6 +273,8 @@ class BackgroundMonitor {
   }
 
   static Future<bool> isRunning() async {
+    if (!_isSupported) return false;
+
     final service = FlutterBackgroundService();
     return await service.isRunning();
   }

@@ -7,6 +7,7 @@ class SetpointEditor extends StatefulWidget {
   final bool enabled;
   final ValueChanged<int> onSet;
   final TextStyle? labelStyle;
+  final double? valueFontSize;
 
   const SetpointEditor({
     super.key,
@@ -14,6 +15,7 @@ class SetpointEditor extends StatefulWidget {
     required this.enabled,
     required this.onSet,
     this.labelStyle,
+    this.valueFontSize,
   });
 
   @override
@@ -121,8 +123,8 @@ class _SetpointEditorState extends State<SetpointEditor> {
                   children: [
                     Text(
                       '${widget.currentSetpoint}°F',
-                      style: const TextStyle(
-                        fontSize: 32,
+                      style: TextStyle(
+                        fontSize: widget.valueFontSize ?? 40,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                       ),
@@ -151,8 +153,8 @@ class _SetpointEditorState extends State<SetpointEditor> {
                         keyboardType: const TextInputType.numberWithOptions(),
                         autofocus: true,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 32,
+                        style: TextStyle(
+                          fontSize: widget.valueFontSize ?? 40,
                           fontWeight: FontWeight.w700,
                           color: SmokerColors.textPrimary,
                         ),

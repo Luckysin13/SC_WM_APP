@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/services.dart';
 import '../app/theme/colors.dart';
+import '../core/utils/ui_utils.dart';
 
 class ShellLayout extends StatelessWidget {
   final Widget child;
@@ -19,6 +20,7 @@ class ShellLayout extends StatelessWidget {
 
     final orientation = MediaQuery.of(context).orientation;
     final isLandscape = orientation == Orientation.landscape;
+    final navConfig = ResponsiveNavConfig.of(context);
 
     // Toggle system UI based on orientation
     if (isLandscape) {
@@ -28,11 +30,12 @@ class ShellLayout extends StatelessWidget {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Row(
         children: [
           if (isLandscape)
             Container(
-              width: 80,
+              width: navConfig.railWidth,
               decoration: BoxDecoration(
                 color: SmokerColors.secondaryBg.withValues(alpha: 0.8),
                 border: Border(
@@ -137,22 +140,63 @@ class ShellLayout extends StatelessWidget {
                   top: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
                 ),
               ),
-              child: NavigationBar(
-                backgroundColor: SmokerColors.secondaryBg.withValues(alpha: 0.8),
-                elevation: 0,
-                selectedIndex: currentIndex,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                indicatorColor: SmokerColors.accentBlue.withValues(alpha: 0.2),
-                onDestinationSelected: (index) {
-                  _navigateTo(context, index);
-                },
-                destinations: [
-                  _navDestination(Icons.thermostat, 'Status', currentIndex == 0),
-                  _navDestination(Icons.tune, 'Options', currentIndex == 1),
-                  _navDestination(Icons.show_chart, 'History', currentIndex == 2),
-                  _navDestination(Icons.settings, 'Config', currentIndex == 3),
-                  _navDestination(Icons.wifi, 'WiFi', currentIndex == 4),
-                ],
+              child: NavigationBarTheme(
+                data: NavigationBarThemeData(
+                  labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                    final isSelected = states.contains(WidgetState.selected);
+                    return TextStyle(
+                      fontSize: navConfig.navLabelFontSize,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color:
+                          isSelected ? SmokerColors.accentBlue : Colors.white60,
+                    );
+                  }),
+                ),
+                child: NavigationBar(
+                  height: navConfig.navBarHeight,
+                  backgroundColor:
+                      SmokerColors.secondaryBg.withValues(alpha: 0.8),
+                  elevation: 0,
+                  selectedIndex: currentIndex,
+                  labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                  indicatorColor: SmokerColors.accentBlue.withValues(alpha: 0.2),
+                  onDestinationSelected: (index) {
+                    _navigateTo(context, index);
+                  },
+                  destinations: [
+                    _navDestination(
+                      context,
+                      Icons.thermostat,
+                      'Status',
+                      currentIndex == 0,
+                    ),
+                    _navDestination(
+                      context,
+                      Icons.tune,
+                      'Options',
+                      currentIndex == 1,
+                    ),
+                    _navDestination(
+                      context,
+                      Icons.show_chart,
+                      'History',
+                      currentIndex == 2,
+                    ),
+                    _navDestination(
+                      context,
+                      Icons.settings,
+                      'Config',
+                      currentIndex == 3,
+                    ),
+                    _navDestination(
+                      context,
+                      Icons.wifi,
+                      'WiFi',
+                      currentIndex == 4,
+                    ),
+                  ],
+                ),
               ),
             ),
     );
@@ -165,12 +209,13 @@ class ShellLayout extends StatelessWidget {
     int index,
     int currentIndex,
   ) {
+    final navConfig = ResponsiveNavConfig.of(context);
     final isSelected = index == currentIndex;
     return InkWell(
       onTap: () => _navigateTo(context, index),
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        width: 70,
+        width: navConfig.railWidth - 10,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -178,7 +223,7 @@ class ShellLayout extends StatelessWidget {
             Icon(
               icon,
               color: isSelected ? SmokerColors.accentBlue : Colors.white60,
-              size: 24,
+              size: navConfig.railIconSize,
             ),
             const SizedBox(height: 4),
             Text(
@@ -186,7 +231,7 @@ class ShellLayout extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isSelected ? SmokerColors.accentBlue : Colors.white60,
-                fontSize: 11,
+                fontSize: navConfig.railLabelFontSize,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -217,14 +262,17 @@ class ShellLayout extends StatelessWidget {
   }
 
   NavigationDestination _navDestination(
+    BuildContext context,
     IconData icon,
     String label,
     bool isSelected,
   ) {
+    final navConfig = ResponsiveNavConfig.of(context);
     return NavigationDestination(
       icon: Icon(
         icon,
         color: isSelected ? SmokerColors.accentBlue : Colors.white60,
+        size: navConfig.navIconSize,
       ),
       label: label,
     );

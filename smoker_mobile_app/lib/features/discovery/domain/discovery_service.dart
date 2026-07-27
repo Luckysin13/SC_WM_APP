@@ -1,5 +1,5 @@
-import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:multicast_dns/multicast_dns.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,7 +7,7 @@ import '../../../core/models/device_identity.dart';
 
 class DiscoveryService {
   Future<bool> requestPermissions() async {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       // On Android 13+, NEARBY_WIFI_DEVICES is required for mDNS
       final nearby = await Permission.nearbyWifiDevices.request();
       if (nearby.isGranted) return true;
@@ -20,6 +20,7 @@ class DiscoveryService {
   }
 
   Future<List<DeviceIdentity>> scanNetwork({Duration timeout = const Duration(seconds: 10)}) async {
+    if (kIsWeb) return []; // mDNS and raw socket scanning not possible in browser sandbox
     final MDnsClient client = MDnsClient();
     final List<DeviceIdentity> discovered = [];
 

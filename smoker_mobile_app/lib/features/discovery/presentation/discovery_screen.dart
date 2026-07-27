@@ -7,6 +7,7 @@ import '../../../core/models/device_identity.dart';
 import 'package:ossc/core/providers/core_providers.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/theme/dimensions.dart';
 
 final discoveryProvider = FutureProvider.autoDispose<List<DeviceIdentity>>((
   ref,
@@ -557,47 +558,54 @@ class _DiscoveryScreenState extends ConsumerState<DiscoveryScreen> {
     Color? color,
     bool isLoading = false,
   }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 48),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: color ?? SmokerColors.accentBlue,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            offset: const Offset(0, 4),
-            blurRadius: 0,
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: SmokerDimensions.maxButtonWidth,
+        ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: color ?? SmokerColors.accentBlue,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black38,
+                offset: const Offset(0, 4),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: isLoading ? null : onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
           ),
         ),
-        child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2,
-                ),
-              ),
       ),
     );
   }

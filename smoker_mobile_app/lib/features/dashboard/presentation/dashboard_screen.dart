@@ -38,11 +38,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     double labelFontSize = 22;
+    double valueFontSize = 40;
+
     if (!isTablet) {
+      // 16 padding left/right + 16 space between = 48px subtracted
+      // then divided by 2 for the column width, minus 32 for card inner padding
       final double availableWidth = (screenWidth - 48) / 2 - 32;
-      final textPainter = TextPainter(
+
+      // 1. Calculate Label Size (Mastered by "MEAT TEMP" + Icon room to drive others)
+      final labelPainter = TextPainter(
         text: const TextSpan(
-          text: 'MEAT TEMP',
+          text: 'MEAT',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -52,8 +58,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      if (textPainter.width > availableWidth) {
-        labelFontSize = 22 * (availableWidth / textPainter.width);
+      // We reserve ~22px for the icon (14px) + spacing (8px) at the base 22pt size
+      const double iconReservation = 22;
+      final double totalNeededWidth = labelPainter.width + iconReservation;
+
+      if (totalNeededWidth > availableWidth) {
+        labelFontSize = 22 * (availableWidth / totalNeededWidth);
+      }
+
+      // 2. Calculate Value Size (Mastered by typical 3-digit temp "888°F")
+      final valuePainter = TextPainter(
+        text: const TextSpan(
+          text: '888°F',
+          style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      if (valuePainter.width > availableWidth) {
+        valueFontSize = 40 * (availableWidth / valuePainter.width);
       }
     }
 
@@ -150,20 +173,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         children: [
                           Expanded(
                             child: TempCard(
-                              title: 'Meat Temp',
+                              title: isTablet ? 'Meat Temp' : 'Meat',
                               tempDisplay: liveState.meatTemp,
                               isDone:
                                   liveState.doneAlarmEnabled &&
                                   liveState.meatDoneFanDisabled,
+                              showAlarmBell: ref.watch(notificationAlarmProvider),
                               labelStyle: labelStyle,
+                              valueFontSize: valueFontSize,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: TempCard(
-                              title: 'Pit Temp',
+                              title: isTablet ? 'Pit Temp' : 'Pit',
                               tempDisplay: liveState.pitTemp,
                               labelStyle: labelStyle,
+                              valueFontSize: valueFontSize,
                             ),
                           ),
                         ],
@@ -178,6 +204,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               .setSetpointCommand(val);
                         },
                         labelStyle: labelStyle,
+                        valueFontSize: valueFontSize,
                       ),
                       const SizedBox(height: 20),
                       FanCard(
@@ -191,11 +218,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               .toggleFanMode(auto);
                         },
                         onAck: () {
-                          ref
-                              .read(deviceSessionManagerProvider)
-                              .sendCommand('AckMeatDoneFanDisable');
+                          final manager =
+                              ref.read(deviceSessionManagerProvider);
+                          // Set to OFF before clearing the disable flag to prevent brief startup
+                          manager.toggleFanMode(false);
+                          manager.sendCommand('AckMeatDoneFanDisable');
                         },
                         labelStyle: labelStyle,
+                        valueFontSize: valueFontSize,
                       ),
                     ],
                   ),

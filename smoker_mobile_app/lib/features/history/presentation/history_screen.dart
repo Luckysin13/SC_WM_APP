@@ -86,7 +86,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final config = ResponsiveToolbarConfig.of(context);
     final shortestSide = MediaQuery.of(context).size.shortestSide;
     final isTablet = shortestSide >= 600;
-    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -125,7 +126,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Session data and temperature charts'.toUpperCase(),
+                            'Temperature chart'.toUpperCase(),
                             style: TextStyle(
                               fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
@@ -304,7 +305,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               padding: const EdgeInsets.only(top: 20, right: 10),
               child: SizedBox(
                 height: chartHeight,
-                child: _buildChart(history, screenWidth),
+                child: _buildChart(history, liveState, screenWidth, isTablet),
               ),
             ),
           ),
@@ -340,7 +341,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 label,
                 style: TextStyle(
                   color: color.withValues(alpha: 0.7),
-                  fontSize: isTablet ? 24 : (isLandscape ? 14 : 10),
+                  fontSize: isTablet ? 16 : (isLandscape ? 14 : 12),
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.1,
                 ),
@@ -364,7 +365,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget _buildChart(List<HistoryPoint> points, double screenWidth) {
+  Widget _buildChart(
+    List<HistoryPoint> points,
+    LiveState liveState,
+    double screenWidth,
+    bool isTablet,
+  ) {
     final List<FlSpot> pitSpots = [];
     final List<FlSpot> meatSpots = [];
     final List<FlSpot> setpointSpots = [];
@@ -388,6 +394,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       if (meatV > -900 && meatV > maxY) maxY = meatV;
       if (spV > maxY) maxY = spV;
     }
+
+    // Meat done setpoint horizontal line
+    final bool showMeatDoneLine = liveState.doneAlarmEnabled;
+    final double meatDoneTemp = liveState.meatDoneSetpoint.toDouble();
+    if (showMeatDoneLine && meatDoneTemp > maxY) maxY = meatDoneTemp;
 
     final double minX = points.first.timestamp.toDouble();
     final double maxX = points.last.timestamp.toDouble();
@@ -473,10 +484,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               if (touchedSpots.indexOf(spot) == 0) {
                 return LineTooltipItem(
                   '$timeStr\n',
-                  const TextStyle(
+                  TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: isTablet ? 16 : 13,
                     decoration: TextDecoration.underline,
                   ),
                   children: [
@@ -485,7 +496,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        fontSize: isTablet ? 16 : 13,
                         decoration: TextDecoration.none,
                       ),
                     ),
@@ -498,7 +509,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 TextStyle(
                   color: color,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: isTablet ? 16 : 13,
                 ),
               );
             }).toList();
@@ -527,7 +538,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 40,
+            reservedSize: 45,
             interval: dynamicInterval,
             getTitlesWidget: (value, meta) {
               final valInt = value.isFinite ? value.toInt() : 0;
@@ -535,20 +546,53 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               return SideTitleWidget(
                 axisSide: meta.axisSide,
                 angle: -0.785, // 45 degrees
-                space: 12,
+                space: 18,
                 child: Text(
                   DateFormat('h:mm a').format(date),
-                  style: const TextStyle(color: Colors.white38, fontSize: 9),
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: isTablet ? 15 : 12,
+                  ),
                 ),
               );
             },
           ),
         ),
         leftTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false, reservedSize: 30),
+          sideTitles: SideTitles(showTitles: false, reservedSize: 0),
         ),
       ),
-      borderData: FlBorderData(show: false),
+      borderData: FlBorderData(
+        show: true,
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      extraLinesData: ExtraLinesData(
+        horizontalLines: [
+          if (showMeatDoneLine)
+            HorizontalLine(
+              y: meatDoneTemp,
+              color: SmokerColors.accentRed.withValues(alpha: 0.7),
+              strokeWidth: 1.5,
+              dashArray: [8, 6],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 6, bottom: 2),
+                style: TextStyle(
+                  color: SmokerColors.accentRed.withValues(alpha: 0.9),
+                  fontSize: isTablet ? 12 : 10,
+                  fontWeight: FontWeight.w700,
+                ),
+                labelResolver: (_) => 'DONE ${meatDoneTemp.toInt()}°F',
+              ),
+            ),
+        ],
+      ),
       lineBarsData: [
         LineChartBarData(
           spots: pitSpots,
@@ -598,7 +642,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     'TEMP (°F) / FAN (%)',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.2),
-                      fontSize: 9,
+                      fontSize: isTablet ? 14 : 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.1,
                     ),
@@ -616,7 +660,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       minY: 0,
                       maxY: chartMaxY,
                       gridData: const FlGridData(show: false),
-                      borderData: FlBorderData(show: false),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border(
+                          right: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            width: 1,
+                          ),
+                        ),
+                      ),
                       lineTouchData: const LineTouchData(enabled: false),
                       titlesData: FlTitlesData(
                         show: true,
@@ -674,16 +726,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'TIME',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.2),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 3.0,
           ),
         ),
       ],

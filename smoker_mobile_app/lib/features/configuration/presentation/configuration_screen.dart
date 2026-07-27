@@ -9,6 +9,7 @@ import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
 import '../../../core/utils/ui_utils.dart';
 import '../../../shared/widgets/version_display.dart';
+import '../../../app/theme/dimensions.dart';
 
 class ConfigurationScreen extends ConsumerStatefulWidget {
   const ConfigurationScreen({super.key});
@@ -206,13 +207,15 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
       _kdController.text = liveState.kd.toString();
     }
 
-    final pitDirty = _pitOffsetController.text != liveState.pitOffset.toString();
+    final pitDirty =
+        _pitOffsetController.text != liveState.pitOffset.toString();
     final meatDirty =
         _meatOffsetController.text != liveState.meatOffset.toString();
     final kpDirty = _kpController.text != liveState.kp.toString();
     final kiDirty = _kiController.text != liveState.ki.toString();
     final kdDirty = _kdController.text != liveState.kd.toString();
-    final tzDirty = _tzController.text !=
+    final tzDirty =
+        _tzController.text !=
         (_timezones.where((t) => t.$2 == liveState.timezone).firstOrNull?.$1 ??
             liveState.timezone);
 
@@ -253,7 +256,8 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Calibrate probes and tune controllers'.toUpperCase(),
+                            'Probe Offsets / PID / Timezone / Firmware Update'
+                                .toUpperCase(),
                             style: TextStyle(
                               fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
@@ -299,11 +303,26 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  _buildCalibrationCard(isConnected, liveState, pitDirty: pitDirty, meatDirty: meatDirty),
+                  _buildCalibrationCard(
+                    isConnected,
+                    liveState,
+                    pitDirty: pitDirty,
+                    meatDirty: meatDirty,
+                  ),
                   const SizedBox(height: 16),
-                  _buildPidCard(isConnected, liveState, kpDirty: kpDirty, kiDirty: kiDirty, kdDirty: kdDirty),
+                  _buildPidCard(
+                    isConnected,
+                    liveState,
+                    kpDirty: kpDirty,
+                    kiDirty: kiDirty,
+                    kdDirty: kdDirty,
+                  ),
                   const SizedBox(height: 16),
-                  _buildTimezoneCard(isConnected, liveState.isApMode, tzDirty: tzDirty),
+                  _buildTimezoneCard(
+                    isConnected,
+                    liveState.isApMode,
+                    tzDirty: tzDirty,
+                  ),
                   const SizedBox(height: 16),
                   _buildOtaCard(isConnected, liveState.isApMode),
                   const SizedBox(height: 32),
@@ -489,7 +508,12 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     );
   }
 
-  Widget _buildCalibrationCard(bool isConnected, LiveState liveState, {required bool pitDirty, required bool meatDirty}) {
+  Widget _buildCalibrationCard(
+    bool isConnected,
+    LiveState liveState, {
+    required bool pitDirty,
+    required bool meatDirty,
+  }) {
     return SmokerCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,7 +566,13 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     );
   }
 
-  Widget _buildPidCard(bool isConnected, LiveState liveState, {required bool kpDirty, required bool kiDirty, required bool kdDirty}) {
+  Widget _buildPidCard(
+    bool isConnected,
+    LiveState liveState, {
+    required bool kpDirty,
+    required bool kiDirty,
+    required bool kdDirty,
+  }) {
     return SmokerCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -688,7 +718,11 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     );
   }
 
-  Widget _buildTimezoneCard(bool isConnected, bool isApMode, {required bool tzDirty}) {
+  Widget _buildTimezoneCard(
+    bool isConnected,
+    bool isApMode, {
+    required bool tzDirty,
+  }) {
     return SmokerCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -708,20 +742,26 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
               filled: true,
               fillColor: Colors.white.withValues(alpha: 0.03),
               labelStyle: TextStyle(
-                color: tzDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+                color: tzDirty
+                    ? SmokerColors.accentOrange
+                    : SmokerColors.textSecondary,
                 fontWeight: tzDirty ? FontWeight.bold : FontWeight.normal,
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: tzDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+                  color: tzDirty
+                      ? SmokerColors.accentOrange
+                      : Colors.white.withValues(alpha: 0.1),
                   width: tzDirty ? 2 : 1,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: tzDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+                  color: tzDirty
+                      ? SmokerColors.accentOrange
+                      : Colors.white.withValues(alpha: 0.1),
                   width: tzDirty ? 2 : 1,
                 ),
               ),
@@ -837,7 +877,9 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+          color: isDirty
+              ? SmokerColors.accentOrange
+              : SmokerColors.textSecondary,
           fontSize: 14,
           fontWeight: isDirty ? FontWeight.bold : FontWeight.normal,
         ),
@@ -846,21 +888,27 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : SmokerColors.accentBlue,
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : SmokerColors.accentBlue,
             width: 2,
           ),
         ),
@@ -878,38 +926,45 @@ class _ConfigurationScreenState extends ConsumerState<ConfigurationScreen> {
     Color? color,
   }) {
     final effectiveColor = color ?? SmokerColors.accentBlue;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: onPressed != null ? effectiveColor : Colors.white10,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: onPressed != null
-            ? [
-                const BoxShadow(
-                  color: Colors.black38,
-                  offset: Offset(0, 4),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: SmokerDimensions.maxButtonWidth,
         ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.1,
-            fontSize: 13,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: onPressed != null ? effectiveColor : Colors.white10,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: onPressed != null
+                ? [
+                    const BoxShadow(
+                      color: Colors.black38,
+                      offset: Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+                fontSize: 13,
+              ),
+            ),
           ),
         ),
       ),

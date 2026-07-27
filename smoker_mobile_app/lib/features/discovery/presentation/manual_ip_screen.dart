@@ -5,6 +5,7 @@ import '../../../core/models/device_identity.dart';
 import 'package:ossc/core/providers/core_providers.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/theme/dimensions.dart';
 
 class ManualIpScreen extends ConsumerStatefulWidget {
   const ManualIpScreen({super.key});
@@ -178,35 +179,42 @@ class _ManualIpScreenState extends ConsumerState<ManualIpScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: SmokerColors.accentBlue,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black38,
-                            offset: Offset(0, 4),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _connect,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: SmokerDimensions.maxButtonWidth,
                         ),
-                        child: const Text(
-                          'CONNECT TO DEVICE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.2,
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: SmokerColors.accentBlue,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black38,
+                                offset: Offset(0, 4),
+                                blurRadius: 0,
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: _connect,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'CONNECT TO DEVICE',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
                           ),
                         ),
                       ),

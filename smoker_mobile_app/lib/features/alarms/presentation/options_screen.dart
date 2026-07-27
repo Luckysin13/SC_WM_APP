@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -7,9 +9,9 @@ import '../../../core/networking/device_session_manager.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/theme/dimensions.dart';
 import '../../../core/services/background_service.dart';
 
-final stayAwakeProvider = StateProvider<bool>((ref) => false);
 
 class OptionsScreen extends ConsumerStatefulWidget {
   const OptionsScreen({super.key});
@@ -36,18 +38,26 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(deviceSessionManagerProvider).changeView('options');
-      final isRunning = await BackgroundMonitor.isRunning();
-      ref.read(stayAwakeProvider.notifier).state = isRunning;
+      
+      // Only override the persisted state with the actual service status on supported mobile platforms
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        final isRunning = await BackgroundMonitor.isRunning();
+        if (ref.read(notificationAlarmProvider) != isRunning) {
+          ref.read(notificationAlarmProvider.notifier).state = isRunning;
+        }
+      }
 
       // Listen for background service status updates
-      FlutterBackgroundService().on('status').listen((event) {
-        if (mounted) {
-          final isRunning = event?['running'] ?? false;
-          if (ref.read(stayAwakeProvider) != isRunning) {
-             ref.read(stayAwakeProvider.notifier).state = isRunning;
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        FlutterBackgroundService().on('status').listen((event) {
+          if (mounted) {
+            final isRunning = event?['running'] ?? false;
+            if (ref.read(notificationAlarmProvider) != isRunning) {
+              ref.read(notificationAlarmProvider.notifier).state = isRunning;
+            }
           }
-        }
-      });
+        });
+      }
     });
   }
 
@@ -153,7 +163,7 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'Alarms and keep warm settings'.toUpperCase(),
+                            'Alarm and keep warm'.toUpperCase(),
                             style: TextStyle(
                               fontSize: config.subtitleFontSize,
                               fontWeight: FontWeight.bold,
@@ -216,7 +226,9 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             }
                             return null;
                           },
-                          onSubmitted: isConnected ? (v) => _sendMeatSetpoint(v) : null,
+                          onSubmitted: isConnected
+                              ? (v) => _sendMeatSetpoint(v)
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         Container(
@@ -231,11 +243,15 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.vibration, color: SmokerColors.accentBlue, size: 24),
+                                  Icon(
+                                    Icons.vibration,
+                                    color: SmokerColors.accentBlue,
+                                    size: 24,
+                                  ),
                                   const SizedBox(width: 16),
                                   const Expanded(
                                     child: Text(
-                                      'BACKGROUND ALARM (STAY AWAKE)',
+                                      'NOTIFICATION ALARM',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,
@@ -245,13 +261,20 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                                     ),
                                   ),
                                   Switch(
-                                    value: ref.watch(stayAwakeProvider),
+                                    value: ref.watch(notificationAlarmProvider),
                                     onChanged: (val) async {
-                                      ref.read(stayAwakeProvider.notifier).state = val;
+                                      ref
+                                              .read(notificationAlarmProvider.notifier)
+                                              .state =
+                                          val;
                                       if (val) {
-                                        final session = ref.read(deviceSessionManagerProvider);
+                                        final session = ref.read(
+                                          deviceSessionManagerProvider,
+                                        );
                                         if (session.transport != null) {
-                                          await BackgroundMonitor.start(session.transport!.wsBaseUrl);
+                                          await BackgroundMonitor.start(
+                                            session.transport!.wsBaseUrl,
+                                          );
                                         }
                                       } else {
                                         await BackgroundMonitor.stop();
@@ -263,8 +286,11 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Note: Meat Done notifications will NOT be active when the app is minimized unless this Stay Awake function is enabled.',
-                                style: TextStyle(color: Colors.white60, fontSize: 12),
+                                'Note: Meat Done notifications will NOT be active when the app is minimized unless this function is enabled.',
+                                style: TextStyle(
+                                  color: Colors.white60,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -318,7 +344,12 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
                             }
                             return null;
                           },
-                          onSubmitted: isConnected ? (v) => _sendWarmSetpoint(v, liveState.meatDoneSetpoint) : null,
+                          onSubmitted: isConnected
+                              ? (v) => _sendWarmSetpoint(
+                                  v,
+                                  liveState.meatDoneSetpoint,
+                                )
+                              : null,
                         ),
                         const SizedBox(height: 16),
                         _buildSaveButton(
@@ -445,7 +476,9 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
-          color: isDirty ? SmokerColors.accentOrange : SmokerColors.textSecondary,
+          color: isDirty
+              ? SmokerColors.accentOrange
+              : SmokerColors.textSecondary,
           fontSize: 14,
           fontWeight: isDirty ? FontWeight.bold : FontWeight.normal,
         ),
@@ -456,21 +489,27 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : Colors.white.withValues(alpha: 0.1),
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : Colors.white.withValues(alpha: 0.1),
             width: isDirty ? 2 : 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(
-            color: isDirty ? SmokerColors.accentOrange : SmokerColors.accentBlue,
+            color: isDirty
+                ? SmokerColors.accentOrange
+                : SmokerColors.accentBlue,
             width: 2,
           ),
         ),
@@ -484,37 +523,44 @@ class _OptionsScreenState extends ConsumerState<OptionsScreen> {
   }
 
   Widget _buildSaveButton({VoidCallback? onPressed}) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: onPressed != null ? SmokerColors.accentBlue : Colors.white10,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: onPressed != null
-            ? [
-                const BoxShadow(
-                  color: Colors.black38,
-                  offset: Offset(0, 4),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: SmokerDimensions.maxButtonWidth,
         ),
-        child: const Text(
-          'SAVE SETTINGS',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: onPressed != null ? SmokerColors.accentBlue : Colors.white10,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: onPressed != null
+                ? [
+                    const BoxShadow(
+                      color: Colors.black38,
+                      offset: Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'SAVE SETPOINT',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
         ),
       ),

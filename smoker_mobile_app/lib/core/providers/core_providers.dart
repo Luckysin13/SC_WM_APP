@@ -88,3 +88,15 @@ final deviceStateProvider = StateProvider<LiveState>((ref) {
 final connectivityProvider = StreamProvider<List<ConnectivityResult>>((ref) {
   return Connectivity().onConnectivityChanged;
 });
+
+final notificationAlarmProvider = StateProvider<bool>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  final value = prefs.getBool('notification_alarm_enabled') ?? false;
+  
+  // Listen for changes and save to prefs
+  ref.listenSelf((previous, next) {
+    prefs.setBool('notification_alarm_enabled', next);
+  });
+  
+  return value;
+});

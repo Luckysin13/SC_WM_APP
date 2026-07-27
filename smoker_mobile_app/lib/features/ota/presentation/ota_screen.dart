@@ -8,6 +8,7 @@ import 'package:ossc/features/ota/domain/ota_state.dart';
 import '../../../shared/widgets/connection_banner.dart';
 import '../../../shared/widgets/smoker_card.dart';
 import '../../../app/theme/colors.dart';
+import '../../../app/theme/dimensions.dart';
 import '../../../core/utils/ui_utils.dart';
 
 class OtaScreen extends ConsumerStatefulWidget {
@@ -352,27 +353,34 @@ class _OtaScreenState extends ConsumerState<OtaScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _showCelebration = false;
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.greenAccent,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: SmokerDimensions.maxButtonWidth,
               ),
-              child: const Text(
-                'CLOSE',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.2,
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _showCelebration = false;
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.greenAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'CLOSE',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1001,45 +1009,52 @@ class _OtaScreenState extends ConsumerState<OtaScreen> {
     VoidCallback? onPressed,
     Color? color,
   }) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: onPressed != null
-            ? (color ?? SmokerColors.accentBlue)
-            : Colors.white10,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: onPressed != null
-            ? [
-                const BoxShadow(
-                  color: Colors.black38,
-                  offset: Offset(0, 4),
-                  blurRadius: 0,
-                ),
-              ]
-            : null,
-      ),
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: SmokerDimensions.maxButtonWidth,
+        ),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: onPressed != null
+                ? (color ?? SmokerColors.accentBlue)
+                : Colors.white10,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: onPressed != null
+                ? [
+                    const BoxShadow(
+                      color: Colors.black38,
+                      offset: Offset(0, 4),
+                      blurRadius: 0,
+                    ),
+                  ]
+                : null,
           ),
-          disabledForegroundColor: Colors.white24,
-        ),
-        icon: Icon(
-          icon,
-          size: 20,
-          color: onPressed != null ? Colors.white : Colors.white24,
-        ),
-        label: Text(
-          label,
-          style: TextStyle(
-            color: onPressed != null ? Colors.white : Colors.white24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.2,
+          child: ElevatedButton.icon(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              disabledForegroundColor: Colors.white24,
+            ),
+            icon: Icon(
+              icon,
+              size: 20,
+              color: onPressed != null ? Colors.white : Colors.white24,
+            ),
+            label: Text(
+              label,
+              style: TextStyle(
+                color: onPressed != null ? Colors.white : Colors.white24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+              ),
+            ),
           ),
         ),
       ),
